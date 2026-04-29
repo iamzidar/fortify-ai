@@ -1,0 +1,13 @@
+{
+  "name": "fortify-ai",
+  "version": "1.0.0",
+  "description": "Fortify SSC Security Dashboard + AI Chatbot",
+  "private": true,
+  "scripts": {
+    "dev": "docker-compose up",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "type-check": "pnpm -r type-check"
+  },
+  "packageManager": "pnpm@10.33.2"
+}

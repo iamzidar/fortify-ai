@@ -127,6 +127,17 @@ dist
 
 # pnpm
 .pnpm-store
+pnpm-lock.yaml
+
+# k8s secrets (never commit)
+k8s/secrets/*.yaml
+!k8s/secrets/README.md
+
+# fcli state
+.fcli/
+
+# Docker
+.dockerignore
 
 # yarn v3
 .pnp.*

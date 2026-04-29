@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssc-service
+  namespace: fortify
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ssc-service
+  template:
+    metadata:
+      labels:
+        app: ssc-service
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: ssc-service
+          image: ghcr.io/iamzidar/fortify-ai/ssc-service:latest
+          ports:
+            - containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+            - name: FCLI_HOME
+              value: /home/node/.fcli
+            - name: INTERNAL_SERVICE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fortify-secrets
+                  key: INTERNAL_SERVICE_SECRET
+          envFrom:
+            - configMapRef:
+                name: fortify-common
+          volumeMounts:
+            - name: fcli-state
+              mountPath: /home/node/.fcli
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: fcli-state
+          persistentVolumeClaim:
+            claimName: fcli-state-pvc

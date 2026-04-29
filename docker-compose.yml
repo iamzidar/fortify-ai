@@ -1,0 +1,144 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fortify}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fortifydev}
+      POSTGRES_DB: ${POSTGRES_DB:-fortify_audit}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fortify"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ssc-service:
+    build: ./services/ssc-service
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      NODE_ENV: ${NODE_ENV:-development}
+      FCLI_HOME: /home/node/.fcli
+      FCLI_DEFAULT_SSC_URL: ${FCLI_DEFAULT_SSC_URL:-https://fortify.kikoichi.dev/ssc}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-dev-internal-secret}
+    volumes:
+      - fcli_state:/home/node/.fcli
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  auth-service:
+    build: ./services/auth-service
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      NODE_ENV: ${NODE_ENV:-development}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-prod}
+      JWT_ACCESS_EXPIRES: ${JWT_ACCESS_EXPIRES:-15m}
+      JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-8h}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      SSC_SERVICE_URL: http://ssc-service:3003
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-dev-internal-secret}
+    depends_on:
+      redis:
+        condition: service_healthy
+      ssc-service:
+        condition: service_started
+
+  dashboard-service:
+    build: ./services/dashboard-service
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      NODE_ENV: ${NODE_ENV:-development}
+      SSC_SERVICE_URL: http://ssc-service:3003
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://fortify:fortifydev@postgres:5432/fortify_audit}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-dev-internal-secret}
+      CACHE_TTL_SECONDS: 60
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ssc-service:
+        condition: service_started
+
+  ai-service:
+    build: ./services/ai-service
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      NODE_ENV: ${NODE_ENV:-development}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      SSC_SERVICE_URL: http://ssc-service:3003
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-dev-internal-secret}
+      MAX_CONVERSATION_TOKENS: 100000
+    depends_on:
+      redis:
+        condition: service_healthy
+      ssc-service:
+        condition: service_started
+
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      NODE_ENV: ${NODE_ENV:-development}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-prod}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      AUTH_SERVICE_URL: http://auth-service:3002
+      SSC_SERVICE_URL: http://ssc-service:3003
+      AI_SERVICE_URL: http://ai-service:3004
+      DASHBOARD_SERVICE_URL: http://dashboard-service:3005
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      RATE_LIMIT_MAX: 100
+      RATE_LIMIT_WINDOW_MS: 60000
+    depends_on:
+      auth-service:
+        condition: service_started
+      ssc-service:
+        condition: service_started
+      ai-service:
+        condition: service_started
+      dashboard-service:
+        condition: service_started
+
+  frontend:
+    build: ./services/frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      api-gateway:
+        condition: service_started
+
+volumes:
+  redis_data:
+  postgres_data:
+  fcli_state:
