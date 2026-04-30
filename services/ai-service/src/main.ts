@@ -80,7 +80,9 @@ async function start(): Promise<void> {
       const trimmed = updatedHistory.slice(-20)
       await redis.setex(historyKey, 8 * 60 * 60, JSON.stringify(trimmed))
     } catch (err) {
-      sendEvent('error', (err as Error).message)
+      const e = err as Error & { cause?: Error; status?: number }
+      const detail = e.cause?.message ?? (e.status ? `HTTP ${e.status}` : 'no detail')
+      sendEvent('error', `${e.message} [${detail}]`)
     } finally {
       reply.raw.end()
     }
