@@ -18,7 +18,7 @@ async function start(): Promise<void> {
 
   app.get('/health', async () => ({ status: 'ok', service: 'dashboard-service' }))
 
-  // GET /overview — aggregate vulnerability counts across all app versions
+  // GET /overview — aggregate vulnerability counts across sampled app versions
   app.get<{ Headers: { 'x-ssc-session': string; 'x-user-id': string } }>(
     '/overview',
     async (req, reply) => {
@@ -31,28 +31,30 @@ async function start(): Promise<void> {
         let critical = 0, high = 0, medium = 0, low = 0
         let totalVersions = 0
 
-        await Promise.all(
-          apps.slice(0, 20).map(async (app) => {
-            const versions = await listVersions(String(app.id), sessionName) as Array<{ id: string }>
+        // Sample first 5 apps sequentially to avoid flooding ssc-service with concurrent fcli spawns
+        for (const app of apps.slice(0, 5)) {
+          let versions: Array<{ id: string }> = []
+          try {
+            versions = await listVersions(String(app.id), sessionName) as Array<{ id: string }>
             totalVersions += versions.length
-            await Promise.all(
-              versions.slice(0, 5).map(async (v) => {
-                try {
-                  const counts = await getIssueCount(String(v.id), sessionName)
-                  critical += counts['Critical'] ?? 0
-                  high += counts['High'] ?? 0
-                  medium += counts['Medium'] ?? 0
-                  low += counts['Low'] ?? 0
-                } catch { /* version may have no issues */ }
-              }),
-            )
-          }),
-        )
+          } catch { continue }
+
+          for (const v of versions.slice(0, 2)) {
+            try {
+              const counts = await getIssueCount(String(v.id), sessionName)
+              critical += counts['Critical'] ?? 0
+              high += counts['High'] ?? 0
+              medium += counts['Medium'] ?? 0
+              low += counts['Low'] ?? 0
+            } catch { /* version may have no issues */ }
+          }
+        }
 
         return {
           totalApplications: apps.length,
           totalVersions,
           issueCounts: { Critical: critical, High: high, Medium: medium, Low: low, total: critical + high + medium + low },
+          sampledApps: Math.min(5, apps.length),
           lastUpdated: new Date().toISOString(),
         }
       })
@@ -88,19 +90,19 @@ async function start(): Promise<void> {
 
     const data = await cached(cacheKey, config.cacheTtl, async () => {
       const versions = await listVersions(appId, sessionName) as Array<{ id: string }>
-      const postures = await Promise.all(
-        versions.map(async (v) => {
-          const [counts, artifacts] = await Promise.allSettled([
-            getIssueCount(String(v.id), sessionName),
-            getRecentArtifacts(String(v.id), sessionName),
-          ])
-          return {
-            version: v,
-            issueCounts: counts.status === 'fulfilled' ? counts.value : {},
-            recentArtifact: artifacts.status === 'fulfilled' ? (artifacts.value as unknown[])[0] : null,
-          }
-        }),
-      )
+      // Sequential to avoid concurrent fcli spawn overload
+      const postures = []
+      for (const v of versions.slice(0, 10)) {
+        const [counts, artifacts] = await Promise.allSettled([
+          getIssueCount(String(v.id), sessionName),
+          getRecentArtifacts(String(v.id), sessionName),
+        ])
+        postures.push({
+          version: v,
+          issueCounts: counts.status === 'fulfilled' ? counts.value : {},
+          recentArtifact: artifacts.status === 'fulfilled' ? (artifacts.value as unknown[])[0] : null,
+        })
+      }
       return { appId, versions: postures }
     })
 
