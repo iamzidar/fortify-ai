@@ -16,11 +16,11 @@ export const fortifyTools: Anthropic.Tool[] = [
   },
   {
     name: 'list_versions',
-    description: 'List all application versions (branches/environments) for a given application.',
+    description: 'List all application versions (branches/environments) for a given application. Pass numeric app ID or the app name string.',
     input_schema: {
       type: 'object',
       properties: {
-        appId: { type: 'string', description: 'The numeric application ID' },
+        appId: { type: 'string', description: 'Numeric application ID or application name string (e.g. "AndroGoat" or "2083")' },
         query: { type: 'string', description: 'Optional SpEL filter' },
       },
       required: ['appId'],
