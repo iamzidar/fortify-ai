@@ -6,6 +6,7 @@ export function internalAuthHook(
   reply: FastifyReply,
   done: HookHandlerDoneFunction,
 ): void {
+  if (req.url === '/health') return done()
   const token = req.headers['x-internal-token']
   if (token !== config.internalSecret) {
     reply.code(401).send({ error: 'Unauthorized' })
