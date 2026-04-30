@@ -45,6 +45,7 @@ export async function sessionRoutes(app: FastifyInstance): Promise<void> {
   app.get<{
     Params: { sessionName: string }
   }>('/session/:sessionName/validate', async (req, reply) => {
+    const { sessionName } = req.params
     try {
       await runFcli(['ssc', 'session', 'ls', '--validate', `--ssc-session=${sessionName}`])
       return reply.send({ valid: true })
