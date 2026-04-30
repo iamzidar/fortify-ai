@@ -21,6 +21,7 @@ spec:
         - ip: "172.67.129.45"
           hostnames:
             - "fortify.kikoichi.dev"
+            - "fortify-dast.kikoichi.dev"
       containers:
         - name: ssc-service
           image: ghcr.io/iamzidar/fortify-ai/ssc-service:latest
