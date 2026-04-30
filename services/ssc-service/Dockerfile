@@ -1,7 +1,6 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package.json tsconfig.json ./
-COPY ../../tsconfig.base.json ../../tsconfig.base.json 2>/dev/null || true
 COPY src ./src
 RUN npm install && npm run build
 
@@ -25,8 +24,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY package.json ./
 
-RUN addgroup -S fortify && adduser -S node -G fortify
-RUN mkdir -p /home/node/.fcli && chown -R node:fortify /home/node/.fcli
+RUN mkdir -p /home/node/.fcli && chown -R node:node /home/node/.fcli
 
 USER node
 EXPOSE 3003

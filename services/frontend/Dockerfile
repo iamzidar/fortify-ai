@@ -11,7 +11,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup -S fortify && adduser -S node -G fortify
+# node user already exists in node:20-alpine
 
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=node:fortify /app/.next/standalone ./

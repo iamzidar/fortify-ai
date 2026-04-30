@@ -4,7 +4,7 @@ import Redis from 'ioredis'
 import { v4 as uuidv4 } from 'uuid'
 import { config } from './config'
 import { runChatStream } from './services/claude.service'
-import type { ChatRequest } from '@fortify-ai/types'
+import type { ChatRequest } from './types'
 
 const app = Fastify({
   logger: {

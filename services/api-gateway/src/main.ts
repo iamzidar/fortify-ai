@@ -3,7 +3,7 @@ import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
 import httpProxy from '@fastify/http-proxy'
 import Redis from 'ioredis'
-import type { JwtPayload } from '@fortify-ai/types'
+import type { JwtPayload } from './types'
 import { config } from './config'
 import { jwtVerifyHook } from './plugins/jwt-verify'
 

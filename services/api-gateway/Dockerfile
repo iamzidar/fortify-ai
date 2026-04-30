@@ -12,7 +12,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY package.json ./
 
-RUN addgroup -S fortify && adduser -S node -G fortify
+# node user already exists in node:20-alpine
 USER node
 EXPOSE 3001
 

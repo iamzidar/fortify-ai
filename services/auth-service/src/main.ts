@@ -5,7 +5,7 @@ import { config } from './config'
 import { createSscSession, deleteSscSession } from './services/ssc-auth.service'
 import { storeSession, getSession, deleteSession } from './services/session.service'
 import { signAccessToken, signRefreshToken, verifyToken } from './services/jwt.service'
-import type { LoginRequest, LoginResponse } from '@fortify-ai/types'
+import type { LoginRequest, LoginResponse } from './types'
 
 const app = Fastify({
   logger: {

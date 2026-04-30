@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import jwt from 'jsonwebtoken'
-import type { JwtPayload } from '@fortify-ai/types'
+import type { JwtPayload } from '../types'
 import { config } from '../config'
 
 // Routes that do not require authentication

@@ -9,7 +9,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@fortify-ai/types": "workspace:*",
     "fastify": "^4.27.0",
     "@fastify/cors": "^9.0.1",
     "ioredis": "^5.4.1",
