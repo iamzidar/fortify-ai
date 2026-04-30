@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+// Empty string = relative path → browser resolves to same origin (/api/...)
+// Set NEXT_PUBLIC_API_URL only if the API is on a different origin
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null
