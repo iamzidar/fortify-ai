@@ -56,15 +56,7 @@ async function start(): Promise<void> {
       user: { id: sessionId, username, sscUrl: config.sscServiceUrl, sessionName },
     }
 
-    return reply
-      .setCookie?.('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: config.nodeEnv === 'production',
-        sameSite: 'strict',
-        maxAge: 8 * 60 * 60,
-        path: '/refresh',
-      })
-      .send(response)
+    return reply.send({ ...response, refreshToken })
   })
 
   // DELETE /logout
@@ -88,7 +80,7 @@ async function start(): Promise<void> {
     if (!refreshToken) return reply.code(400).send({ error: 'refreshToken required' })
 
     try {
-      const payload = verifyToken(refreshToken) as { sessionId: string; type: string }
+      const payload = verifyToken(refreshToken) as unknown as { sessionId: string; type: string }
       if (payload.type !== 'refresh') throw new Error('Not a refresh token')
 
       const session = await getSession(payload.sessionId)
