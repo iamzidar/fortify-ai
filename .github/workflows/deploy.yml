@@ -73,15 +73,16 @@ jobs:
           cp -r k8s/* /opt/fortify-ai/k8s/
 
       - name: Apply manifests and rolling restart
+        env:
+          KUBECONFIG: /home/runner/.kube/config
         run: |
           set -e
-          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-          sudo kubectl apply -f /opt/fortify-ai/k8s/configmaps/
-          sudo kubectl apply -f /opt/fortify-ai/k8s/pvc/
-          sudo kubectl apply -f /opt/fortify-ai/k8s/services/
-          sudo kubectl apply -f /opt/fortify-ai/k8s/deployments/
-          sudo kubectl apply -f /opt/fortify-ai/k8s/ingress/
-          sudo kubectl rollout restart deployment -n fortify
-          sudo kubectl rollout status deployment/api-gateway -n fortify --timeout=120s
-          sudo kubectl rollout status deployment/frontend -n fortify --timeout=120s
+          kubectl apply -f /opt/fortify-ai/k8s/configmaps/
+          kubectl apply -f /opt/fortify-ai/k8s/pvc/
+          kubectl apply -f /opt/fortify-ai/k8s/services/
+          kubectl apply -f /opt/fortify-ai/k8s/deployments/
+          kubectl apply -f /opt/fortify-ai/k8s/ingress/
+          kubectl rollout restart deployment -n fortify
+          kubectl rollout status deployment/api-gateway -n fortify --timeout=120s
+          kubectl rollout status deployment/frontend -n fortify --timeout=120s
           echo "Deploy complete!"
