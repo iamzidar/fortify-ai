@@ -18,8 +18,8 @@ export async function listApplications(sessionName: string): Promise<unknown[]> 
   return sscGet<unknown[]>('/applications', sessionName)
 }
 
-export async function listVersions(appId: string, sessionName: string): Promise<unknown[]> {
-  return sscGet<unknown[]>(`/applications/${appId}/versions`, sessionName)
+export async function listVersions(appName: string, sessionName: string): Promise<unknown[]> {
+  return sscGet<unknown[]>(`/applications/${encodeURIComponent(appName)}/versions`, sessionName)
 }
 
 export async function getIssueCount(

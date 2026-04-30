@@ -27,7 +27,7 @@ async function start(): Promise<void> {
       const cacheKey = `dashboard:${userId}:overview`
 
       const data = await cached(cacheKey, config.cacheTtl, async () => {
-        const apps = await listApplications(sessionName) as Array<{ id: string }>
+        const apps = await listApplications(sessionName) as Array<{ id: string; name: string }>
         let critical = 0, high = 0, medium = 0, low = 0
         let totalVersions = 0
 
@@ -35,7 +35,8 @@ async function start(): Promise<void> {
         for (const app of apps.slice(0, 5)) {
           let versions: Array<{ id: string }> = []
           try {
-            versions = await listVersions(String(app.id), sessionName) as Array<{ id: string }>
+            // --app in fcli appversion list takes the application NAME, not numeric ID
+            versions = await listVersions(app.name, sessionName) as Array<{ id: string }>
             totalVersions += versions.length
           } catch { continue }
 
