@@ -24,6 +24,8 @@ spec:
           env:
             - name: NODE_ENV
               value: production
+            - name: API_GATEWAY_URL
+              value: "http://api-gateway:3001"
           resources:
             requests:
               cpu: "100m"
