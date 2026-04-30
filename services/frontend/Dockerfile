@@ -14,8 +14,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # node user already exists in node:20-alpine
 
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=node:fortify /app/.next/standalone ./
-COPY --from=builder --chown=node:fortify /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 
 USER node
 EXPOSE 3000
