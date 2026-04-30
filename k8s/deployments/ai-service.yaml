@@ -15,6 +15,10 @@ spec:
     spec:
       imagePullSecrets:
         - name: ghcr-secret
+      hostAliases:
+        - ip: "160.79.104.10"
+          hostnames:
+            - "api.anthropic.com"
       containers:
         - name: ai-service
           image: ghcr.io/iamzidar/fortify-ai/ai-service:latest

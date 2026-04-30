@@ -88,6 +88,17 @@ jobs:
             echo "ANTHROPIC_API_KEY synced to k8s secret"
           fi
 
+      - name: Fix CoreDNS external forwarding
+        env:
+          KUBECONFIG: /home/runner/.kube/config
+        run: |
+          # Patch CoreDNS to use 8.8.8.8 instead of node resolv.conf (which has no external DNS)
+          kubectl get configmap coredns -n kube-system -o yaml | \
+            sed 's|forward . /etc/resolv.conf|forward . 8.8.8.8 8.8.4.4|g' | \
+            kubectl apply -f - 2>/dev/null || true
+          kubectl rollout restart deployment coredns -n kube-system 2>/dev/null || true
+          echo "CoreDNS patched"
+
       - name: Apply manifests and rolling restart
         env:
           KUBECONFIG: /home/runner/.kube/config
