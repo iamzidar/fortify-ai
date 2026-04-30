@@ -19,17 +19,21 @@ export async function issueRoutes(app: FastifyInstance): Promise<void> {
   })
 
   // GET /issues/count?av=<versionId>&groupBy=friority
+  // fcli ssc issue count doesn't exist — compute from issue list and aggregate in JS
   app.get<{
     Querystring: { av: string; groupBy?: string }
     Headers: { 'x-ssc-session': string }
   }>('/issues/count', async (req, reply) => {
     const sessionName = req.headers['x-ssc-session']
-    const { av, groupBy } = req.query
+    const { av } = req.query
     if (!av) return reply.code(400).send({ error: 'av (appversion id) is required' })
 
-    const args = ['issue', 'count', '--av', av]
-    if (groupBy) args.push('--group-by', groupBy)
-    const data = await runSscCommand(args, sessionName)
-    return reply.send(data)
+    const issues = await runSscCommand(['issue', 'list', '--av', av], sessionName) as Array<Record<string, unknown>>
+    const counts: Record<string, number> = {}
+    for (const issue of issues) {
+      const sev = String(issue['friority'] ?? 'Unknown')
+      counts[sev] = (counts[sev] ?? 0) + 1
+    }
+    return reply.send(counts)
   })
 }

@@ -36,7 +36,8 @@ async function start(): Promise<void> {
           let versions: Array<{ id: string }> = []
           try {
             // --app in fcli appversion list takes the application NAME, not numeric ID
-            versions = await listVersions(app.name, sessionName) as Array<{ id: string }>
+            versions = (await listVersions(app.name, sessionName) as Array<{ id: string; committed?: boolean }>)
+              .filter(v => v.committed !== false)
             totalVersions += versions.length
           } catch { continue }
 
