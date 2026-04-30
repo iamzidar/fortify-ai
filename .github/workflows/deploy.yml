@@ -72,6 +72,22 @@ jobs:
         run: |
           cp -r k8s/* /opt/fortify-ai/k8s/
 
+      - name: Sync secrets to k8s
+        env:
+          KUBECONFIG: /home/runner/.kube/config
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            kubectl patch secret fortify-secrets -n fortify \
+              --type='json' \
+              -p="[{\"op\":\"replace\",\"path\":\"/data/ANTHROPIC_API_KEY\",\"value\":\"$(echo -n "$ANTHROPIC_API_KEY" | base64 -w0)\"}]" \
+              2>/dev/null || \
+            kubectl patch secret fortify-secrets -n fortify \
+              --type='json' \
+              -p="[{\"op\":\"add\",\"path\":\"/data/ANTHROPIC_API_KEY\",\"value\":\"$(echo -n "$ANTHROPIC_API_KEY" | base64 -w0)\"}]"
+            echo "ANTHROPIC_API_KEY synced to k8s secret"
+          fi
+
       - name: Apply manifests and rolling restart
         env:
           KUBECONFIG: /home/runner/.kube/config
