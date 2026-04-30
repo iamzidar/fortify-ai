@@ -60,7 +60,7 @@ jobs:
 
   deploy:
     name: Deploy to k3s
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, k3s]
     needs: build-push
     environment: production
 
@@ -68,32 +68,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1
-        with:
-          host: 10.100.34.182
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
+      - name: Copy k8s manifests
+        run: |
+          cp -r k8s/* /opt/fortify-ai/k8s/
 
-            # Pull latest images (k3s uses containerd — pull via ctr or crictl)
-            echo "Pulling latest images from GHCR..."
-            for svc in frontend api-gateway auth-service ssc-service ai-service dashboard-service; do
-              k3s ctr images pull ghcr.io/iamzidar/fortify-ai/${svc}:latest
-            done
-
-            # Apply manifests
-            kubectl apply -f /opt/fortify-ai/k8s/namespace.yaml
-            kubectl apply -f /opt/fortify-ai/k8s/pvc/
-            kubectl apply -f /opt/fortify-ai/k8s/configmaps/
-            kubectl apply -f /opt/fortify-ai/k8s/deployments/
-            kubectl apply -f /opt/fortify-ai/k8s/services/
-            kubectl apply -f /opt/fortify-ai/k8s/ingress/
-
-            # Rolling restart to pick up new images
-            kubectl rollout restart deployment -n fortify
-            kubectl rollout status deployment/api-gateway -n fortify --timeout=120s
-            kubectl rollout status deployment/frontend -n fortify --timeout=120s
-
-            echo "Deploy complete!"
+      - name: Apply manifests and rolling restart
+        run: |
+          set -e
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          sudo kubectl apply -f /opt/fortify-ai/k8s/configmaps/
+          sudo kubectl apply -f /opt/fortify-ai/k8s/pvc/
+          sudo kubectl apply -f /opt/fortify-ai/k8s/services/
+          sudo kubectl apply -f /opt/fortify-ai/k8s/deployments/
+          sudo kubectl apply -f /opt/fortify-ai/k8s/ingress/
+          sudo kubectl rollout restart deployment -n fortify
+          sudo kubectl rollout status deployment/api-gateway -n fortify --timeout=120s
+          sudo kubectl rollout status deployment/frontend -n fortify --timeout=120s
+          echo "Deploy complete!"
