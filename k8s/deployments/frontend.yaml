@@ -20,11 +20,10 @@ spec:
           image: ghcr.io/iamzidar/fortify-ai/frontend:latest
           ports:
             - containerPort: 3000
+          imagePullPolicy: Always
           env:
             - name: NODE_ENV
               value: production
-            - name: NEXT_PUBLIC_API_URL
-              value: "https://fortify-ai.kikoichi.dev"
           resources:
             requests:
               cpu: "100m"
